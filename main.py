@@ -5,7 +5,7 @@ import re
 import schedule
 import time
 from info_structure import *
-#start_notification_system()
+start_notification_system()
 
 from telebot import types
 bot=telebot.TeleBot('6600443788:AAE4dA8vLdHeW306IpkuCGVeNIFvA8pJpWY')
