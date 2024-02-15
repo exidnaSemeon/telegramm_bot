@@ -31,6 +31,8 @@ class time_data:
 
 
 def set_notofication(day, time, chat_id):
+    print(day, time, chat_id,12312312312312312312)
+    obj=None
     if day == 'понедельник':
         obj = schedule.every().monday.at(time).do(send_message, chat_id)
     if day == 'вторник':
@@ -45,7 +47,6 @@ def set_notofication(day, time, chat_id):
         obj= schedule.every().saturday.at(time).do(send_message, chat_id)
     if day == 'воскресенье':
         obj = schedule.every().sunday.at(time).do(send_message, chat_id)
-
     return obj
 def f(a):
     print(1)
@@ -118,29 +119,25 @@ def start_notification_system():
     c = db.cursor()
     c.execute(f"SELECT * FROM users")
     slovar = c.fetchall()
-    print(slovar)
-
     for x in slovar:
-     print(x)
      chat_id=x[0]
      dictionary = json.loads(x[1])  # раcшифровали
-     print(dictionary,type(dictionary))
      for day in dictionary:
          for time in range(len(dictionary[day])):
              print(time)
              if (as_time_data(json.loads(dictionary[day][time][3]))).notification!=None:
+                 print((as_time_data(json.loads(dictionary[day][time][3]))).notification)
                  current=(as_time_data(json.loads(dictionary[day][time][3]))).notification
-                 print((as_time_data(json.loads(dictionary[day][time][3]))).notification,123123123)
-                 set_notofication(current[0],current[1],chat_id)
-
-
+                 time_now=[dictionary[day][time][0],dictionary[day][time][1]]
+                 print(day)
+                 set_notofication(day,substract(time_now, current)[0],chat_id)
     db.commit()
     db.close()
 
 
 
 def add_to_schedule_jobs(callback): # to do
-    print(callback.data)
+
     pred=callback.data[-1]
     day=callback.data[1]
     time=eval(callback.data[0])
@@ -152,7 +149,7 @@ def add_to_schedule_jobs(callback): # to do
     for i in range(len(dictionary[day])):
         if dictionary[day][i][0]==time[0]:
             obj=as_time_data(json.loads(dictionary[day][i][3]))
-            print(obj.notification)
+
             if obj.notification!=None:
                 bot.send_message(callback.message.chat.id,'на это время уже установленно уведомление.')
                 db.commit()
@@ -161,7 +158,7 @@ def add_to_schedule_jobs(callback): # to do
             else:
                 scdl=set_notofication(day, (substract(time, int(pred)))[1], callback.message.chat.id)
                 date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5] #to_do
-                print(str(scdl.next_run).split(' ')[1][:5])
+
                 obj.notification= days_of_week[get_day(date).lower()],time1231312
                 dictionary[day][i][3]=obj.to_json()
                 dictionary = json.dumps(dictionary)
@@ -171,6 +168,45 @@ def add_to_schedule_jobs(callback): # to do
     db.commit()
     db.close()
     return
+def del_notification(callback):
+    time,day=eval(callback.data[0]),callback.data[1]
+    db = sqlite3.connect('databaze.db')
+    c = db.cursor()
+    c.execute(f"SELECT slovar FROM users WHERE user_id={callback.message.chat.id}")
+    slovar = c.fetchall()[0][0]
+    dictionary = json.loads(slovar)
+    for i in range(len(dictionary[day])):
+        print(dictionary[day][i],day,time)
+        if dictionary[day][i][0] == time[0]:
+            obj = as_time_data(json.loads(dictionary[day][i][3]))
+            print(obj.notification)
+            if obj.notification == None:
+
+
+                bot.send_message(callback.message.chat.id, 'на это время не установленно уведомление.')
+                db.commit()
+                db.close()
+                return
+            else:
+                time_to_delete=substract(time,obj.notification)[0]+':00'#at_time
+                print(time_to_delete)
+                obj.notification=None
+
+                dictionary[day][i][3] = obj.to_json()
+
+                dictionary = json.dumps(dictionary)
+
+                c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, callback.message.chat.id))
+                for x in schedule.get_jobs():
+                    print(x,str(x.at_time),time_to_delete)
+                    if str(x.at_time)==time_to_delete:
+                        schedule.cancel_job(x)
+                        print('работа удалена из оперативной памяти')
+                        print(schedule.get_jobs())
+                bot.send_message(callback.message.chat.id,'время успешно удалено')
+                db.commit()
+                db.close()
+
 
 
 

@@ -120,6 +120,19 @@ def notification_add_choose_time_2(callback):
     time,day=callback.data[0],callback.data[1]
     markup=buttons_for_notification(callback)
     bot.send_message(callback.message.chat.id,'за какое количество времени вас предупретить?',reply_markup=markup)
+@bot.message_handler(commands=['del_notifications'])
+def notification_del_choose_day(message):
+    markup = show_week(message, 'notification_del')
+    bot.send_message(message.chat.id,'выберите день недели, в котором хотите удалить уведомления',reply_markup=markup)
+def notification_del(callback):
+    chat_id=callback.message.chat.id
+    markup=choose_time(callback,'notification_del1')
+    if markup=='этот день свободен': bot.send_message(chat_id, 'этот день свободен')
+    else: bot.send_message(chat_id,'у какого времени хотите убрать уведомление??',reply_markup=markup)
+def finaly_delete_notification(callback):
+    print(callback.data)
+    del_notification(callback)
+
 
 
 
@@ -150,7 +163,15 @@ def callbackmessage(callback):
         elif command=='not_ad':
             callback.data = callback.data.split('//')[:-1]
             add_to_schedule_jobs(callback)
-            pass
+        elif command=='notification_del':
+            print(callback.data)
+            callback.data = callback.data.split('//')[0]
+            print(callback.data)
+            notification_del(callback)
+        elif command== 'notification_del1':
+            callback.data = callback.data.split('//')[:-1]
+            finaly_delete_notification(callback)
+
 
 
 def finaly_delete_data(callback):
@@ -180,7 +201,6 @@ def finaly_delete_data(callback):
     db.commit()
     db.close()
     return
-
 def choose_time_del(callback):
     chat_id=callback.message.chat.id
     markup=choose_time(callback,'del1')
@@ -298,13 +318,13 @@ def check_if_overlaps(day,new_time):
 @bot.message_handler(content_types=['text']) #
 def define_a_command(message):
     command=message.text.split(' ', 1)[0].strip() #смотрим какая команда
-    message.text=message.text.split(' ', 1)[1]
+    message.text=message.text.split(' ', 1)[1:]
     print(command)
     if command=='add':
         change_timetable_add123(message)
 
 
-
+print(schedule.get_jobs()[0])
 bot.polling(none_stop=True)#чтобы всегда работало
 
 while True:#
