@@ -31,7 +31,7 @@ class time_data:
 
 
 def set_notofication(day, time, chat_id):
-    print(day, time, chat_id,12312312312312312312)
+
     obj=None
     if day == 'понедельник':
         obj = schedule.every().monday.at(time).do(send_message, chat_id)
@@ -136,34 +136,23 @@ def start_notification_system():
 
 
 
-def add_to_schedule_jobs(callback): # to do
-
-    pred=callback.data[-1]
-    day=callback.data[1]
-    time=eval(callback.data[0])
+def add_to_schedule_jobs(message,pred,day,time):
     db = sqlite3.connect('databaze.db')
     c = db.cursor()
-    c.execute(f"SELECT slovar FROM users WHERE user_id={callback.message.chat.id}")
+    c.execute(f"SELECT slovar FROM users WHERE user_id={message.chat.id}")
     slovar = c.fetchall()[0][0]
     dictionary = json.loads(slovar)
     for i in range(len(dictionary[day])):
         if dictionary[day][i][0]==time[0]:
             obj=as_time_data(json.loads(dictionary[day][i][3]))
-
-            if obj.notification!=None:
-                bot.send_message(callback.message.chat.id,'на это время уже установленно уведомление.')
-                db.commit()
-                db.close()
-                return
-            else:
-                scdl=set_notofication(day, (substract(time, int(pred)))[1], callback.message.chat.id)
+            if obj.notification==None:
+                scdl=set_notofication(day, (substract(time, int(pred)))[1], message.chat.id)
                 date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5] #to_do
-
                 obj.notification= days_of_week[get_day(date).lower()],time1231312
                 dictionary[day][i][3]=obj.to_json()
                 dictionary = json.dumps(dictionary)
-                c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, callback.message.chat.id))
-                bot.send_message(callback.message.chat.id,f'уведомление успешно установленно на {time1231312}, следующее срабатываение пройзойдет {str(scdl.next_run)[:-3]}')
+                c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, message.chat.id))
+                bot.send_message(message.chat.id,f'уведомление успешно установленно на {time1231312}, следующее срабатываение пройзойдет {str(scdl.next_run)[:-3]}')
 
     db.commit()
     db.close()
@@ -255,6 +244,26 @@ def choose_time(callback,ind):
     db.commit()
     db.close()
     return markup
+def del_messge(message,id):
+    bot.delete_message(message.chat.id, message.message_id - id)
+def clear_timetable(message):
+    db = sqlite3.connect('databaze.db')
+    my_dict = {}
+    for x in week:
+        my_dict[x]=[]
+    json_dict = json.dumps(my_dict)
+    c = db.cursor()
+    c.execute(f"SELECT slovar FROM users WHERE user_id={message.chat.id}")
+    slovar = c.fetchall()[0][0]
+    dictionary=json.loads(slovar) # расшифровали
+    for x in dictionary:
+        dictionary[x]=[]
+    json_dict = json.dumps(dictionary)  # шифруем обратно
+    c.execute("UPDATE users SET slovar=? WHERE user_id=?", (json_dict,message.chat.id))
+    db.commit()  # обновление самой базы данных
+    db.close()
+    start_notification_system()
+    bot.send_message(message.chat.id, 'ваше расписание успешно очищенно')
 
 def check_time_range(obj): #added
     if isinstance(obj, list) and len(obj) == 2:
