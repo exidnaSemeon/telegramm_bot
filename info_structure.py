@@ -7,7 +7,6 @@ import time
 from telebot import types
 from datetime import datetime, timedelta
 bot=telebot.TeleBot('6600443788:AAE4dA8vLdHeW306IpkuCGVeNIFvA8pJpWY')
-
 days_of_week = {
     'monday': 'понедельник',
     'tuesday': 'вторник',
@@ -15,8 +14,7 @@ days_of_week = {
     'thursday': 'четверг',
     'friday': 'пятница',
     'saturday': 'суббота',
-    'sunday': 'воскресенье'
-}
+    'sunday': 'воскресенье'}
 class time_data:
     def __init__(self,notification=None,is_postponed=False):
         self.notification=notification #
@@ -28,10 +26,7 @@ class time_data:
         obj=as_time_data(obj) # обратно расшифрорываем
         '''
         return json.dumps(self, indent=4, default=lambda o: o.__dict__)
-
-
 def set_notofication(day, time, chat_id):
-
     obj=None
     if day == 'понедельник':
         obj = schedule.every().monday.at(time).do(send_message, chat_id)
@@ -48,8 +43,6 @@ def set_notofication(day, time, chat_id):
     if day == 'воскресенье':
         obj = schedule.every().sunday.at(time).do(send_message, chat_id)
     return obj
-def f(a):
-    print(1)
 def as_time_data(dct):
     return time_data(dct['notification'], dct['is_postponed'])
 # abc=time_data()
@@ -58,8 +51,19 @@ def as_time_data(dct):
 # print(abc.notification.next_run)
 #
 # print(json.dumps(abc.notification.__dict__) )
-
 week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
+week_dict={week[i]: i for i in range(len(week))}
+
+def find_nearest_weekday(day_of_week):
+    '''  0 до 6, где 0 - понедельник, 1 - вторник и т.д.
+    :param day_of_week: int(0-6)
+    :return: date(2024-02-19)
+    '''
+    today = datetime.now().date()
+    days_ahead = (day_of_week - today.weekday()) % 7
+    nearest_date = today + timedelta(days=days_ahead)
+    return nearest_date
+
 def substract(times,pred):
     time=[]
     for time_str in times:
@@ -68,12 +72,10 @@ def substract(times,pred):
         new_time_str = new_time_obj.strftime('%H:%M')
         time.append(new_time_str)
     return time
-
 def get_day(date_str):
     date_obj = datetime.strptime(date_str, '%Y-%m-%d')
     day_of_week = date_obj.strftime('%A')
     return day_of_week
-
 def show_week(message,ind): #added
     '''
     :param message:
@@ -99,8 +101,6 @@ def show_week(message,ind): #added
         elif i % 3 == 2:
             button3 = (types.InlineKeyboardButton(week[i], callback_data=f'{week[i]}//{ind}'))
     return  markup
-
-
 def buttons_for_notification(callback):
     markup = types.InlineKeyboardMarkup()
     button1 = (types.InlineKeyboardButton('15 минут', callback_data=f'{callback.data[0]}//{callback.data[1]}//15//not_ad'))
@@ -109,11 +109,8 @@ def buttons_for_notification(callback):
     markup.add(button1,button2,button3)
     print(markup)
     return markup
-
 def send_message(chat_id):
     bot.send_message(chat_id ,'скоро начнется запланированное событие!')
-
-
 def start_notification_system():
     db = sqlite3.connect('databaze.db')
     c = db.cursor()
@@ -133,9 +130,6 @@ def start_notification_system():
                  set_notofication(day,substract(time_now, current)[0],chat_id)
     db.commit()
     db.close()
-
-
-
 def add_to_schedule_jobs(message,pred,day,time):
     db = sqlite3.connect('databaze.db')
     c = db.cursor()
@@ -147,13 +141,12 @@ def add_to_schedule_jobs(message,pred,day,time):
             obj=as_time_data(json.loads(dictionary[day][i][3]))
             if obj.notification==None:
                 scdl=set_notofication(day, (substract(time, int(pred)))[1], message.chat.id)
-                date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5] #to_do
+                date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5]
                 obj.notification= days_of_week[get_day(date).lower()],time1231312
                 dictionary[day][i][3]=obj.to_json()
                 dictionary = json.dumps(dictionary)
                 c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, message.chat.id))
                 bot.send_message(message.chat.id,f'уведомление успешно установленно на {time1231312}, следующее срабатываение пройзойдет {str(scdl.next_run)[:-3]}')
-
     db.commit()
     db.close()
     return
@@ -170,8 +163,6 @@ def del_notification(callback):
             obj = as_time_data(json.loads(dictionary[day][i][3]))
             print(obj.notification)
             if obj.notification == None:
-
-
                 bot.send_message(callback.message.chat.id, 'на это время не установленно уведомление.')
                 db.commit()
                 db.close()
@@ -180,11 +171,8 @@ def del_notification(callback):
                 time_to_delete=substract(time,obj.notification)[0]+':00'#at_time
                 print(time_to_delete)
                 obj.notification=None
-
                 dictionary[day][i][3] = obj.to_json()
-
                 dictionary = json.dumps(dictionary)
-
                 c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, callback.message.chat.id))
                 for x in schedule.get_jobs():
                     print(x,str(x.at_time),time_to_delete)
@@ -195,11 +183,6 @@ def del_notification(callback):
                 bot.send_message(callback.message.chat.id,'время успешно удалено')
                 db.commit()
                 db.close()
-
-
-
-
-
 def choose_time(callback,ind):
     '''
     :param callback:
@@ -227,9 +210,7 @@ def choose_time(callback,ind):
         if i==len(day) -2 and len(day)%3==2:
             button1 = (types.InlineKeyboardButton(f'{day[i][0]}-{day[i][1]}', callback_data=f'{day[i]}//{what_day}//{ind}'))
             button2 = (types.InlineKeyboardButton(f'{day[i+1][0]}-{day[i+1][1]}', callback_data=f'{day[i+1]}//{what_day}//{ind}'))
-
             markup.add(button1,button2)
-
         elif i % 3 == 0:
             button1 = (types.InlineKeyboardButton(f'{day[i][0]}-{day[i][1]}', callback_data=f'{day[i]}//{what_day}//{ind}'))
         elif i % 3 == 1:
@@ -262,9 +243,10 @@ def clear_timetable(message):
     c.execute("UPDATE users SET slovar=? WHERE user_id=?", (json_dict,message.chat.id))
     db.commit()  # обновление самой базы данных
     db.close()
+    for x in schedule.get_jobs():
+        schedule.cancel_job(x)
     start_notification_system()
     bot.send_message(message.chat.id, 'ваше расписание успешно очищенно')
-
 def check_time_range(obj): #added
     if isinstance(obj, list) and len(obj) == 2:
         if all(isinstance(item, str) for item in obj):
