@@ -143,7 +143,8 @@ def add_to_schedule_jobs(message,pred,day,time):
         if dictionary[day][i][0]==time[0]:
             obj=as_time_data(json.loads(dictionary[day][i][3]))
             time = [time[0],time[1]]
-            scdl=set_notofication(day, (substract(time, int(pred)))[1], message.chat.id)
+            print(time, 'помогите',(substract(time, int(pred))))
+            scdl=set_notofication(day, (substract(time, int(pred)))[0], message.chat.id)
             date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5]
             obj.notification= pred#days_of_week[get_day(date).lower()],time1231312
             print(obj.notification)
