@@ -25,10 +25,7 @@ class gologolome:
         return  self.service.calendarList().insert(body=calendar_list_entry).execute()
     def add_event(self,calendar_id,event):
         return self.service.events().insert(calendarId=calendar_id, body=event).execute()
-        # return self.service.events().insert(
-        # calendar_id=calendar_id,
-        # body=body).execute(
-        # )
+
  # "RRULE:FREQ=WEEKLY;BYDAY=MO"
 # event = {
 #   'summary': 'Google I/O 2015',
@@ -71,12 +68,12 @@ def finaly_add_to_google_calendar(callback):
     'recurrence': ['RRULE:FREQ=WEEKLY']
 }
 
-   print(event)
+   print(event,id)
    obj.add_event(id,event)
-
-
-
-
+   pprint.pprint(obj.add_event(id,event))
+   bot.send_message(callback.message.chat.id,'запись успешно добавленна в ваш гугл календарь')
+   db.commit()
+   db.close()
 
 
 def check_if_google_connected(message):

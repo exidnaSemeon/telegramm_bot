@@ -4,11 +4,14 @@ import json
 import re
 import schedule
 import time
+import os
 from info_structure import *
 from  google_api import *
 from telebot import types
+from dotenv import load_dotenv
 start_notification_system()
-bot=telebot.TeleBot('6600443788:AAE4dA8vLdHeW306IpkuCGVeNIFvA8pJpWY')
+load_dotenv()
+bot=telebot.TeleBot(os.getenv('TOKEN'))
 week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
 litle_week=['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
 litle_week_dict={}

@@ -65,6 +65,12 @@ def find_nearest_weekday(day_of_week):
     return nearest_date
 
 def substract(times,pred):
+    '''
+    :param times: ВРЕМЯ НАЧАЛА
+    :param pred:  насколько минут надо перенести
+    :return: новое время
+    '''
+    print(pred,123123)
     time=[]
     for time_str in times:
         time_obj = datetime.strptime(time_str, '%H:%M')
@@ -121,12 +127,9 @@ def start_notification_system():
      dictionary = json.loads(x[1])  # раcшифровали
      for day in dictionary:
          for time in range(len(dictionary[day])):
-             print(time)
              if (as_time_data(json.loads(dictionary[day][time][3]))).notification!=None:
-                 print((as_time_data(json.loads(dictionary[day][time][3]))).notification)
                  current=(as_time_data(json.loads(dictionary[day][time][3]))).notification
                  time_now=[dictionary[day][time][0],dictionary[day][time][1]]
-                 print(day)
                  set_notofication(day,substract(time_now, current)[0],chat_id)
     db.commit()
     db.close()
@@ -139,14 +142,16 @@ def add_to_schedule_jobs(message,pred,day,time):
     for i in range(len(dictionary[day])):
         if dictionary[day][i][0]==time[0]:
             obj=as_time_data(json.loads(dictionary[day][i][3]))
-            if obj.notification==None:
-                scdl=set_notofication(day, (substract(time, int(pred)))[1], message.chat.id)
-                date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5]
-                obj.notification= days_of_week[get_day(date).lower()],time1231312
-                dictionary[day][i][3]=obj.to_json()
-                dictionary = json.dumps(dictionary)
-                c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, message.chat.id))
-                bot.send_message(message.chat.id,f'уведомление успешно установленно на {time1231312}, следующее срабатываение пройзойдет {str(scdl.next_run)[:-3]}')
+            time = [time[0],time[1]]
+            scdl=set_notofication(day, (substract(time, int(pred)))[1], message.chat.id)
+            date,time1231312=str(scdl.next_run).split(' ')[0],str(scdl.next_run).split(' ')[1][:5]
+            obj.notification= pred#days_of_week[get_day(date).lower()],time1231312
+            print(obj.notification)
+            dictionary[day][i][3]=obj.to_json()
+            dictionary = json.dumps(dictionary)
+            c.execute("UPDATE users SET slovar=? WHERE user_id=?", (dictionary, message.chat.id))
+            bot.send_message(message.chat.id,f'уведомление успешно установленно на {time1231312}, следующее срабатываение пройзойдет {str(scdl.next_run)[:-3]}')
+
     db.commit()
     db.close()
     return
@@ -180,7 +185,7 @@ def del_notification(callback):
                         schedule.cancel_job(x)
                         print('работа удалена из оперативной памяти')
                         print(schedule.get_jobs())
-                bot.send_message(callback.message.chat.id,'время успешно удалено')
+                bot.send_message(callback.message.chat.id,'уведомление успешно удалено')
                 db.commit()
                 db.close()
 def choose_time(callback,ind):
